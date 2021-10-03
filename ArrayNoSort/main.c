@@ -20,6 +20,8 @@ main()
 	printf("\n");
 	
 	del(4);
+	
+	update(5, "f");
 		
 	printf("Key = %d, Value = %s\n", 1, get(1));
 	printf("Key = %d, Value = %s\n", 2, get(2));

@@ -14,6 +14,44 @@ init(int num)
 	kvnum.add_num = 0;
 }
 
+/*
+* 复制一个value然后返回
+* value@Value: 需要复制的值
+* return: 复制好的值
+*/
+Value
+copyValue(Value value)
+{
+	Value t_value;
+	int len = 0;
+	
+	if(value)
+	{
+		len = strlen(value);
+	}
+	
+	t_value = (Value)malloc(sizeof(char) * (len + 1));
+	memcpy(t_value, value, len);
+	t_value[len] = '\0';
+	
+	return t_value;
+}
+
+
+int 
+reinitValue(int pos, Value value)
+{
+	if(pos >= kvnum.num)
+	{
+		printf("There is not position on %d\n", pos);
+		return 0;
+	}
+	
+	free(kvnum.kv[pos].value);
+	kvnum.kv[pos].value = copyValue(value);
+	return 1;
+}
+
 int 
 getNotSmallPosition(Key key)
 {
@@ -43,18 +81,17 @@ getNotSmallPosition(Key key)
 	return mid + 1;
 }
 
-void
+int
 reinitNode(int pos, Key key, Value value)
 {
-	int len = 0;
-	kvnum.kv[pos].key = key;
-	if(value)
+	if(reinitValue(pos, value))
 	{
-		len = strlen(value);
+		kvnum.kv[pos].key = key;
 	}
-	kvnum.kv[pos].value = (Value)malloc(sizeof(char) * (len + 1));
-	memcpy(kvnum.kv[pos].value, value, len);
-	kvnum.kv[pos].value[len] = '\0';
+	else
+	{
+		return 0;
+	}
 }
 
 void
@@ -118,15 +155,11 @@ put(Key key, Value value)
 Value 
 get(Key key)
 {
-	int len = 0;
 	int pos = getNotSmallPosition(key);
 	
 	if(pos < kvnum.add_num && kvnum.kv[pos].key == key)
 	{
-		len = strlen(kvnum.kv[pos].value);
-		Value t_value = (Value)malloc(sizeof(char) * (len + 1));
-		memcpy(t_value, kvnum.kv[pos].value, len);
-		t_value[len] = '\0';
+		Value t_value = copyValue(kvnum.kv[pos].value);
 		return t_value;
 	}
 	

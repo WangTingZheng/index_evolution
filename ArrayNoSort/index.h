@@ -17,10 +17,13 @@ typedef struct
     int add_num;
 }KVNum;
 
-void init(int num);
+KVNum kvnum;
+
+int init(int num);
 int put(Key key, Value value);
 Value get(Key key);
 int del(Key key);
+int update(Key key, Value value);
 void print();
 
 #endif
