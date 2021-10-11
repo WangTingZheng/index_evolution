@@ -8,6 +8,7 @@ main()
 	put(2, "b");
 	put(1, "c");
 	put(3, "d");
+	put(4, "m");
 	
 	del(3);
 	
