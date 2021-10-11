@@ -4,10 +4,10 @@
 void
 main()
 {
-	put(1, "a");
+	put(4, "a");
 	put(2, "b");
-	put(3, "c");
-	put(4, "d");
+	put(1, "c");
+	put(3, "d");
 	
 	del(3);
 	

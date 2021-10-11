@@ -1,12 +1,12 @@
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+
 #include "index.h"
 
 KVNum kvnum;
 
-void 
+void
 init(int num)
 {
 	kvnum.kv = (KV *)malloc(sizeof(KV) * num);
@@ -14,175 +14,183 @@ init(int num)
 	kvnum.add_num = 0;
 }
 
-/*
-* 复制一个value然后返回
-* value@Value: 需要复制的值
-* return: 复制好的值
-*/
-Value
-copyValue(Value value)
-{
-	Value t_value;
-	int len = 0;
-	
-	if(value)
-	{
-		len = strlen(value);
-	}
-	
-	t_value = (Value)malloc(sizeof(char) * (len + 1));
-	memcpy(t_value, value, len);
-	t_value[len] = '\0';
-	
-	return t_value;
+int 
+findNotSmallPos(Key key){
+  int start = 0;
+  int end   = kvnum.add_num - 1;
+  int mid   = 0;
+  
+  while(start <= end)
+  {
+     mid = (start + end)/2;
+     if(kvnum.kv[mid].key > key)
+     {
+        end = mid - 1;
+     }else if(kvnum.kv[mid].key < key)
+     {
+        start = mid + 1;
+     }
+     else 
+    {
+        return mid;
+     }
+   }
+
+   if(kvnum.kv[mid].key > key)
+   {
+		return mid;
+   }
+   else
+   {
+		return mid + 1;
+   }
 }
 
-
-int 
-reinitValue(int pos, Value value)
+void 
+updateNodeValue(int pos, Value value)
 {
-	if(pos >= kvnum.num)
-	{
-		printf("There is not position on %d\n", pos);
-		return 0;
-	}
-	
-	free(kvnum.kv[pos].value);
-	kvnum.kv[pos].value = copyValue(value);
-	return 1;
+  int len = 0;
+  free(kvnum.kv[pos].value);
+  if(value)
+  {
+     len = strlen(value);
+  }
+  kvnum.kv[pos].value = (Value)malloc(sizeof(char) * (len + 1));
+  memcpy(kvnum.kv[pos].value, value, len);
+  kvnum.kv[pos].value[len] = '\0';
 }
 
-int 
-getNotSmallPosition(Key key)
+void
+updateNode(int pos, Key key, Value value)
 {
-	int start = 0;
-	int end   = kvnum.add_num - 1;
-	int mid   = (start + end) >> 1;
-	
-	do
-	{
-		if(kvnum.kv[mid].key > key)
-		{
-			end   = mid - 1;
-		}
-		else if(kvnum.kv[mid].key < key)
-		{
-		    start = mid + 1;
-		}
-		else
-		{
-			return mid;
-		}
-		
-		mid = (start + end) >> 1;
-	}
-	while(start <= end);
-	
-	return mid + 1;
+   kvnum.kv[pos].key = key;
+   updateNodeValue(pos, value);
+}
+
+void
+shiftNodeRight(int pos)
+{
+   int len = 0;
+   kvnum.kv[pos + 1].key = kvnum.kv[pos].key;
+   updateNodeValue(pos + 1, kvnum.kv[pos].value);
+}
+
+void
+shiftNodeLeft(int pos)
+{
+   int len = 0;
+   kvnum.kv[pos - 1].key = kvnum.kv[pos].key;
+   updateNodeValue(pos - 1, kvnum.kv[pos].value);
+}
+
+void 
+shiftRangeRight(int start, int end)
+{
+   for(int i = end; i >= start; i--)
+   {
+      shiftNodeRight(i);
+   }
+}
+
+void 
+shiftRangeLeft(int start, int end)
+{
+   for(int i = start; i <= end; i++)
+   {
+      shiftNodeLeft(i);
+   }
 }
 
 int
-reinitNode(int pos, Key key, Value value)
-{
-	if(reinitValue(pos, value))
-	{
-		kvnum.kv[pos].key = key;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-void
-reinitNodeFromNode(int dist, int origin)
-{
-	reinitNode(dist, kvnum.kv[origin].key, kvnum.kv[origin].value);
-}
-
-void
-moveRightNode(int start, int end)
-{
-	if(end > kvnum.num)
-	{
-		printf("Node can not be move\n");
-		return;
-	}
-	
-	for(int i = end + 1; i > start; i--)
-	{
-		reinitNodeFromNode(i, i - 1);
-	}
-}
-
-void
-moveLeftNode(int start, int end)
-{
-	if(start <= 1)
-	{
-		printf("Node can not be move\n");
-		return;
-	}
-	
-	for(int i = start; i <= end; i++)
-	{
-		reinitNodeFromNode(i - 1, i);
-	}
-}
-
-int 
 put(Key key, Value value)
 {
+  if(kvnum.add_num >= kvnum.num)
+  {
+	return 0;
+  }
+  
+  int pos = findNotSmallPos(key);
+
+  if(pos < kvnum.add_num)
+  {
+     if(kvnum.kv[pos].key == key)
+     {
+       updateNodeValue(pos, value);
+     }else
+     {
+       shiftRangeRight(pos, kvnum.add_num - 1);
+       updateNode(pos, key, value);
+       kvnum.add_num ++;
+     }
+  }else
+  {
+	 updateNode(kvnum.add_num, key, value);
+	 kvnum.add_num ++;
+  }
+  
+  return 1;
+}
+
+void 
+del(Key key)
+{
+	int pos = findNotSmallPos(key);
+	
+	if(pos < kvnum.add_num)
+	{
+		if(kvnum.kv[pos].key == key)
+		{
+			shiftRangeLeft(pos + 1, kvnum.add_num - 1);
+			kvnum.add_num --;
+		}
+	}
+}
+
+void
+update(Key key, Value value)
+{
+	int pos = findNotSmallPos(key);
 	int len = 0;
-	int pos = getNotSmallPosition(key);
 	
-	if(kvnum.kv[pos].key == key)
+	if(pos < kvnum.add_num)
 	{
-		reinitNode(pos, key, value);
+		if(kvnum.kv[pos].key == key)
+		{
+			updateNodeValue(pos, value);
+		}
 	}
-	else if(pos >= kvnum.add_num)
-	{
-		reinitNode(kvnum.add_num, key, value);
-	}else
-	{
-		moveRightNode(pos, kvnum.add_num - 1);
-		reinitNode(pos, key, value);
-	}
-	
-	kvnum.add_num ++;
 }
 
 Value 
 get(Key key)
 {
-	int pos = getNotSmallPosition(key);
+	int pos = findNotSmallPos(key);
+	int len = 0;
+	Value value;
 	
-	if(pos < kvnum.add_num && kvnum.kv[pos].key == key)
+	if(pos < kvnum.add_num)
 	{
-		Value t_value = copyValue(kvnum.kv[pos].value);
-		return t_value;
+		if(kvnum.kv[pos].key == key)
+		{
+			if(kvnum.kv[pos].value)
+			{
+				len = strlen(kvnum.kv[pos].value);
+			}
+			
+			value = (Value)malloc(sizeof(char) * (len + 1));
+			memcpy(value, kvnum.kv[pos].value, len);
+			kvnum.kv[pos].value[len] = '\0';
+			return value;
+		}
 	}
-	
-	return NULL;
+	return NULL;	
 }
 
 void
-del(Key key)
-{
-	int pos = getNotSmallPosition(key);
-	if(pos < kvnum.add_num && kvnum.kv[pos].key == key)
-	{
-		moveLeftNode(pos + 1, kvnum.add_num);
-	}
-	
-	kvnum.add_num --;
-}
-
-void 
 print()
 {
-	for(int i = 0;i < kvnum.add_num; i++)
+	for(int i=0;i< kvnum.add_num; i++)
 	{
-		printf("Key =  %d, Value = %s\n", kvnum.kv[i].key, kvnum.kv[i].value);
+		printf("Key = %d, Value = %s\n", kvnum.kv[i].key, kvnum.kv[i].value);
 	}
 }

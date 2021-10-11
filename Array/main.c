@@ -5,11 +5,11 @@ void
 main(){
 	init(100);
 	
-	put(1, "a");
-	put(2, "b");
-	put(3, "c");
+	put(2, "a");
+	put(5, "b");
+	put(1, "c");
 	put(6, "d");
-	put(5, "e");
+	put(3, "e");
 	
 	del(3);
 
@@ -18,4 +18,7 @@ main(){
 	printf("key = %d, value = %s\n", 3, get(3));
 	printf("key = %d, value = %s\n", 6, get(6));
 	printf("key = %d, value = %s\n", 5, get(5));
+	
+	printf("\n");
+	print();
 }

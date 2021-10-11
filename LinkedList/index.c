@@ -35,23 +35,60 @@ put(Key key, Value value)
 	}
 }
 
-Value 
-get(Key key)
+void
+update(Key key, Value value)
 {
 	KVNode *temp = head;
-	while(temp->kv.key != key)
+	int len = 0;
+	while(temp && temp->kv.key != key)
 	{
 		temp = temp->next;
 	}
 	
-	return temp->kv.value;
+	if(temp)
+	{
+		if(value)
+		{
+			len = strlen(value);
+		}
+		
+		free(temp->kv.value);
+		temp->kv.value = (Value)malloc(sizeof(char) * (len + 1));
+		memcpy(temp->kv.value, value, len);
+		temp->kv.value[len] = '\0';
+	}
+}
+
+Value 
+get(Key key)
+{
+	KVNode *temp = head;
+	Value value;
+	int len = 0;
+	
+	while(temp && temp->kv.key != key)
+	{
+		temp = temp->next;
+	}
+	
+	if(temp)
+	{
+		if(temp->kv.value)
+		{
+			len = strlen(temp->kv.value);
+		}
+		
+		value = (Value)malloc(sizeof(char) * (len + 1);
+		memcpy(value, temp->kv.value, len);
+		value[len] = '\0';
+	}
+	return value;
 }
 
 void 
 del(Key key)
 {
 	KVNode *temp = head; 
-	KVNode *deleteNode = head;
 	
 	/*
 	* 当找到需要删除的节点时
@@ -61,16 +98,12 @@ del(Key key)
 		head = temp->next; //将头节点保存为要删除节点的下一个节点
 		free(temp->kv.value); //释放要删除节点的value空间
 		free(temp); //释放要删除的节点
-		if(head)
-		{
-			temp = head->next; //将节点移动到下一个位置，继续检查
-		}
-		else
-		{
-			temp = NULL;
-		}
+		
+		temp = head;
 	}
 	//此时，头节点比不可能是要删除的节点
+	KVNode *deleteNode = head;
+
 	
 	//从头节点开始，如果下一个节点存在
 	while(deleteNode && deleteNode->next)

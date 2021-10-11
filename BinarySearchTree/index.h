@@ -18,8 +18,9 @@ struct KVNODE
 	KVNode *right;
 };
 
-void put(Key key, Value value);
-Value get(Key key);
+int put(Key key, Value value);
 void del(Key key);
+int update(Key key, Value value);
+Value get(Key key);
 
 #endif

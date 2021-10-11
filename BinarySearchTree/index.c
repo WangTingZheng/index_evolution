@@ -1,236 +1,289 @@
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
+
 #include "index.h"
 
-KVNode *root;
-
-inline static KVNode *
-initNode(KVNode *node, Key key, Value value)
-{
-	int len = strlen(value);
-	if(!node)
-	{
-		node = (KVNode *)malloc(sizeof(KVNode));
-	}
-	
-	node->kv.key = key;
-	
-	node->kv.value = (Value)malloc(sizeof(char) * (len + 1));
-	memcpy(node->kv.value, value, len);
-	node->kv.value[len] = '\0';
-	
-	return node;
-}
-
-inline static KVNode *
-newNode(Key key, Value value)
-{
-	KVNode *temp = (KVNode *)malloc(sizeof(KVNode));
-	temp = initNode(temp, key, value);
-	temp->left = NULL;
-	temp->right = NULL;
-	
-	return temp;
-}
-
-inline static void
-freeNode(KVNode *node)
-{
-	free(node->kv.value);
-	free(node);
-}
-
-void 
-put(Key key, Value value)
-{
-	KVNode *temp = root;
-	int flag = 0;
-	
-	if(!temp)
-	{
-		root = newNode(key, value);
-		return;
-	}
-	
-	do
-	{
-		if(temp->kv.key > key)
-		{
-			if(temp->left)
-			{
-				temp = temp->left;
-			}
-			else
-			{
-				temp->left = newNode(key, value);
-				flag = 1;
-			}
-		}else if(temp->kv.key < key)
-		{
-			if(temp->right)
-			{
-				temp = temp->right;
-			}
-			else
-			{
-				temp->right = newNode(key, value);
-				flag = 1;
-			}
-		}else
-		{
-			temp = initNode(temp, key, value);
-		}
-	}while(!flag && temp->kv.key != key);
-}
+KVNode *head;
 
 KVNode *
-getSecondNode(Key key)
+findParentNode(Key key)
 {
-	KVNode *temp;
-	KVNode *second;
-	temp = root;
-	second = root;
+	KVNode *temp = head;
+	KVNode *next;
+	KVNode *returnNode;
 	
-	if(!temp)
+	if(!head)
 	{
 		return NULL;
+	}else if(head->kv.key == key)
+	{
+		return head;
 	}
-
+	
 	while(1)
 	{
 		if(temp->kv.key > key)
 		{
-			if(temp->left)
-			{
-				temp = temp->left;
-				second = temp;
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-		else if(temp->kv.key < key)
+			next = temp->left;
+		}else if(temp->kv.key < key)
 		{
-			if(temp->right)
-			{
-				temp = temp->right;
-				second = temp;
-			}
-			else
-			{
-				return NULL;
-			}
+			next = temp->right;
+		}
+		
+		
+		returnNode = temp;
+		
+		if(next && next->kv.key != key)
+		{
+			temp = next;
 		}
 		else
 		{
-			return second;
+			return temp;
 		}
+	}
+
+}
+
+Value
+copyValue(Value src)
+{
+	int len = 0;
+	Value dest;
+	
+	if(src)
+	{
+		len = strlen(src);
+	}
+	
+	dest = (Value)malloc(sizeof(char) * (len + 1));
+	memcpy(dest, src, len);
+	dest[len] = '\0';
+	
+	return dest;
+}
+
+KVNode *
+KVToNode(Key key, Value value)
+{
+	KVNode *node = (KVNode *)malloc(sizeof(KVNode));
+	node->kv.key = key;
+	node->kv.value  = copyValue(value);
+	
+	node->right = NULL;
+	node->left = NULL;
+	
+	return node;
+}
+
+KVNode *
+findNode(Key key)
+{
+	KVNode *parent = findParentNode(key);
+	
+	if(head && head->kv.key == key)
+	{
+		return head;
+	}
+		
+	if(parent)
+	{
+		if(parent->kv.key > key)
+		{
+			return parent->left;
+		}else if(parent->kv.key < key)
+		{
+			return parent->right;
+		}
+	}
+	
+	return NULL;
+}
+
+void 
+freeNode(KVNode *node)
+{
+	if(node)
+	{
+		if(node->kv.value)
+		{
+			free(node->kv.value);
+		}
+		free(node);
 	}
 }
 
-KVNode * 
-getNode(Key key)
+KVNode *
+findMaxNodeInLeftTree(KVNode *node)
 {
-	KVNode *node = getSecondNode(key);
-	
 	if(!node)
 	{
 		return NULL;
 	}
 	
-	if(node->kv.key == key)
+	KVNode *left = node->left;
+	
+	while(left && left->right)
 	{
-		return node;
-	}else if(node->left)
-	{
-		if(node->left->kv.key == key)
-		{
-			return node->left;
-		}
-	}else if(node->right)
-	{
-		if(node->right->kv.key == key)
-		{
-			return node->right;
-		}
+		left = left->right;
 	}
+	
+	return left;
+}
+
+KVNode *
+findMinNodeInRightTree(KVNode *node)
+{
+	if(!node)
+	{
+		return NULL;
+	}
+	
+	KVNode *right = node->right;
+	
+	while(right && right->left)
+	{
+		right = right->left;
+	}
+
+	return right;
+}
+
+int 
+copyNode(KVNode *dest, KVNode *src)
+{
+	if(dest && src)
+	{
+		dest->kv.value = copyValue(src->kv.value);
+		dest->kv.key = src->kv.key;
+		return 1;
+	}
+	
+	return 0;
+}
+
+int 
+modifyNodeValue(KVNode *node, Value value)
+{
+	int len = 0;
+	if(node)
+	{
+		node->kv.value = copyValue(value);
+	}
+	return 0;
+}
+
+Value 
+returnNodeValue(KVNode *node)
+{
+	int len = 0;
+	Value value;
+	
+	if(node)
+	{
+		if(node->kv.value)
+		{
+			len = strlen(node->kv.value);
+		}
+	
+		return copyValue(node->kv.value);
+	}
+	
 	return NULL;
+}
+
+int
+put(Key key, Value value)
+{
+   KVNode *parent = findParentNode(key);
+   KVNode *son    = KVToNode(key, value);
+   
+   if(parent)
+   {
+      if(parent->kv.key > key)
+      {
+         parent->left = son;
+         return 1;
+      }else if(parent->kv.key < key)
+      {
+         parent->right = son;
+         return 1;
+      }else
+      {
+		 modifyNodeValue(parent, value);
+      }
+   }else
+   {
+		if(!head)
+		{
+			head = son;
+			return 1;
+		}
+   }
+   return 0;
+}
+
+void
+del(Key key)
+{
+  KVNode *node = findNode(key);
+  if(!node)
+  {
+	return;
+  }
+  
+  if(node->left && node->right)
+  {
+      KVNode *max = findMaxNodeInLeftTree(node);
+      copyNode(node, max);
+      del(max->kv.key);
+  }else if(node->left || node->right)
+  {
+      KVNode *parent = findParentNode(key);
+      if(parent->kv.key > key)
+      {
+         parent->left = node->right?node->right:node->left;
+         freeNode(node);
+      }else if(parent->kv.key < key)
+      {
+         parent->right = node->right?node->right:node->left;
+         freeNode(node);
+      }else
+      {
+		 freeNode(head);
+		 head = NULL;
+      }
+  }else
+  {
+      KVNode *parent = findParentNode(key);
+       if(parent->kv.key > key)
+       {
+          freeNode(parent->left);
+          parent->left = NULL;
+       }else if(parent->kv.key < key)
+       {
+          freeNode(parent->right);
+          parent->right= NULL;
+       }else
+       {
+			freeNode(head);
+			head = NULL;
+       }
+  }
+}
+
+int
+update(Key key, Value value)
+{
+   int len = 0;
+   KVNode *node = findNode(key);
+   return modifyNodeValue(node, value);
 }
 
 Value
 get(Key key)
 {
-	KVNode *temp = getNode(key);
-	if(temp)
-	{
-		return temp->kv.value;
-	}
-	
-	return NULL;
-}
-
-KVNode *
-findLeftSecondNode(KVNode *node)
-{
-	KVNode *temp = node;
-	while(temp && temp->left && temp->left->left)
-	{
-		temp = temp->left;
-	}
-	
-	if(temp && temp->left)
-	{
-		return temp;
-	}
-	
-	return NULL;
-}
-
-void 
-del(Key key)
-{
-	KVNode *node = getNode(key);
-	KVNode *second = getSecondNode(key);
-	KVNode *secondLeft;
-
-	if(!node)
-	{
-		return;
-	}
-	
-	if(node->left && node->right)
-	{
-		secondLeft = findLeftSecondNode(node);
-		if(secondLeft)
-		{
-			node = initNode(node, secondLeft->left->kv.key, secondLeft->left->kv.value);
-			freeNode(secondLeft->left);
-		}
-	}else if(node->left)
-	{
-		node = initNode(node, node->left->kv.key, node->left->kv.value);
-		node->left = node->left->left;
-		node->right = node->left->right;
-	}
-	else if(node->right)
-	{
-		node = initNode(node, node->right->kv.key, node->right->kv.value);
-		node->left = node->right->left;
-		node->right = node->right->right;
-	}
-	else
-	{
-		if(second->left->kv.key == key)
-		{
-			free(second->left);
-			second->left = NULL;
-		}else if(second->right->kv.key == key)
-		{
-			free(second->right);
-			second->right = NULL;
-		}
-	}
+   KVNode *node = findNode(key);
+   return returnNodeValue(node);
 }
